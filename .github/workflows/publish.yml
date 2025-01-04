@@ -25,5 +25,5 @@ jobs:
 
     - name: Build the docker image
       run: |
-        docker build . --tag ghcr.io/suchmememanyskill/cssloader-mapping-bot:latest
-        docker push ghcr.io/suchmememanyskill/cssloader-mapping-bot:latest
+        docker build . --tag ghcr.io/deckthemes/cssloader-mapping-bot:latest
+        docker push ghcr.io/deckthemes/cssloader-mapping-bot:latest
