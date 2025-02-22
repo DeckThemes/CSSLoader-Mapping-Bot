@@ -3,11 +3,12 @@ import logging
 import os
 import aiohttp
 import asyncio
-import sys
 import re
 import io
+import json
 
 intents = discord.Intents.none()
+intents.message_content = True
 logger = logging.getLogger('discord.bot')
 base_url = os.getenv('BASE_URL', 'https://api.deckthemes.com/mappings.json')
 bot_token = os.getenv('BOT_TOKEN')
@@ -235,6 +236,35 @@ async def convert(interaction : discord.Interaction, file: discord.Attachment):
     discord_file = discord.File(bio, filename=file.filename)
 
     await interaction.followup.send(file=discord_file)
+
+# Json validator hack as beebles asked for it
+@bot.event
+async def on_message(msg : discord.Message):
+    if msg.author.bot:
+        return
+
+    if len(msg.attachments) <= 0:
+        return
+
+    filtered_attachments = [x for x in msg.attachments if x.content_type == "application/json"]
+
+    if len(filtered_attachments) <= 0:
+        return
+
+    failed_results : list[str, str] = []
+
+    for x in filtered_attachments:
+        try:
+            json.loads(await x.read())
+        except Exception as e:
+            failed_results.append((x.filename, str(e)))
+
+    if len(failed_results) <= 0:
+        await msg.add_reaction("✅")
+        return
+    
+    await msg.add_reaction("❌")
+    await msg.reply(content="JSON Validation failed!\n\n" + "\n\n".join([f"**{x[0]}**\n{x[1]}" for x in failed_results]), mention_author=True)
 
 @bot.event
 async def on_ready():
