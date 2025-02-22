@@ -8,6 +8,7 @@ import io
 import json
 
 intents = discord.Intents.none()
+intents.guild_messages = True
 intents.message_content = True
 logger = logging.getLogger('discord.bot')
 base_url = os.getenv('BASE_URL', 'https://api.deckthemes.com/mappings.json')
@@ -246,7 +247,7 @@ async def on_message(msg : discord.Message):
     if len(msg.attachments) <= 0:
         return
 
-    filtered_attachments = [x for x in msg.attachments if x.content_type == "application/json"]
+    filtered_attachments = [x for x in msg.attachments if "application/json" in x.content_type]
 
     if len(filtered_attachments) <= 0:
         return
