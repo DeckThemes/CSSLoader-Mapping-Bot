@@ -238,6 +238,22 @@ async def convert(interaction : discord.Interaction, file: discord.Attachment):
 
     await interaction.followup.send(file=discord_file)
 
+# Json validator context action as emerald asked for it
+@bot.tree.context_menu(name="Validate JSON")
+async def your_command_func(interaction: discord.Interaction, message: discord.Message):
+    error_message = None
+
+    try:
+        json.loads(message.content.replace("```json", "").replace("`", ""))
+    except Exception as e:
+        error_message = str(e)
+
+    if not error_message:
+        await interaction.response.send_message("JSON ok ✅")
+        return
+    
+    await interaction.response.send_message(f"JSON not ok ❌\n\n{error_message}")
+
 # Json validator hack as beebles asked for it
 @bot.event
 async def on_message(msg : discord.Message):
@@ -256,6 +272,9 @@ async def on_message(msg : discord.Message):
 
     for x in filtered_attachments:
         try:
+            if x.size > 0x100000:
+                raise Exception("File too big")
+
             json.loads(await x.read())
         except Exception as e:
             failed_results.append((x.filename, str(e)))
