@@ -87,7 +87,7 @@ class MappingsManager:
         
         match = self.index_css_class[css_class]
         module = self.find_module(match[0])
-        return (module, match[1], module["classname_mappings"][match[1]])
+        return (module, match[1], module["classname_mappings"][match[1]], match[0])
     
     def find_webpack_key(self, webpack_key : str) -> list[tuple[dict, str, dict[str, str]]]|None:
         if webpack_key not in self.index_webpack_key:
@@ -106,7 +106,7 @@ class MappingsManager:
             return None
         
         module = css[0]
-        module_id = list(module["ids"].values())[0]
+        module_id = css[3]
         module_name = ("_" + str(module_id) if module['name'] is None else module['name'])
 
         return f"{module_name}_{css[1]}"
