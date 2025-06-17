@@ -51,6 +51,7 @@ class MappingsManager:
             index_css_class = {}
 
             for _, (module_id, module_data) in enumerate(data["module_mappings"].items()):
+                i = module_data["ids"][next(iter(module_data["ids"]))]
                 for _, (webpack_key, css_class_list) in enumerate(module_data["classname_mappings"].items()):
                     t = (module_id, webpack_key)
 
@@ -58,6 +59,7 @@ class MappingsManager:
                         index_webpack_key[webpack_key] = []
                     
                     index_webpack_key[webpack_key].append(t)
+                    index_css_class["." + i + "_" + webpack_key] = t
                     for _, (steam_version, css_class) in enumerate(css_class_list.items()):
                         if css_class in index_css_class:
                             logger.warning(f"Duplicate css class {css_class} ({index_css_class[css_class][1]}, {webpack_key})")
