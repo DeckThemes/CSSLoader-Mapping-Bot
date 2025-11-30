@@ -293,35 +293,4 @@ async def on_ready():
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
 
-#bot.run(bot_token)
-
-async def test():
-    asyncio.create_task(mappings_manager_instance.update_mappings())
-    await asyncio.sleep(2)
-
-    with open("Z:/shared.css", "r") as fp:
-        css = fp.read()
-
-    split_css = re.split(r"(\.[_a-zA-Z]+[_a-zA-Z0-9-]*)", css)
-
-    for x in range(len(split_css)):
-        if split_css[x].startswith(".") and split_css[x][1:] in mappings_manager_instance.index_css_class:
-            split_css[x] = "." + mappings_manager_instance.get_universal_key_for_css_class(split_css[x][1:])
-            print(f"Found: {split_css[x]}")
-        else:
-            print(f"Not found: {split_css[x][1:]} {split_css[x][1:] in mappings_manager_instance.index_css_class}")
-
-    css = ("".join(split_css)).replace("\\", "\\\\").replace("`", "\\`")
-
-    split_css = re.split(r"(\[class[*^|~]=\"[_a-zA-Z0-9-]*\"\])", css)
-
-    for x in range(len(split_css)):
-        if split_css[x].startswith("[class") and split_css[x].endswith("\"]") and split_css[x][9:-2] in mappings_manager_instance.index_css_class:
-            split_css[x] = split_css[x][0:9] + mappings_manager_instance.get_universal_key_for_css_class(split_css[x][9:-2]) + split_css[x][-2:]
-
-    css = ("".join(split_css)).replace("\\", "\\\\").replace("`", "\\`")
-
-    print(css)
-
-
-asyncio.run(test())
+bot.run(bot_token)
