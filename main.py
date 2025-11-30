@@ -81,7 +81,7 @@ class MappingsManager:
 
         return self.module_mappings[module_id]
 
-    def find_css_class(self, css_class : str) -> tuple[dict, str, dict[str, str]]|None:
+    def find_css_class(self, css_class : str) -> tuple[dict, str, dict[str, str], str]|None:
         if css_class not in self.index_css_class:
             return None
         
@@ -89,14 +89,14 @@ class MappingsManager:
         module = self.find_module(match[0])
         return (module, match[1], module["classname_mappings"][match[1]], match[0])
     
-    def find_webpack_key(self, webpack_key : str) -> list[tuple[dict, str, dict[str, str]]]|None:
+    def find_webpack_key(self, webpack_key : str) -> list[tuple[dict, str, dict[str, str], str]]|None:
         if webpack_key not in self.index_webpack_key:
             return None
         
         entries = []
         for match in self.index_webpack_key[webpack_key]:
             module = self.find_module(match[0])
-            entries.append((module, match[1], module["classname_mappings"][match[1]]))
+            entries.append((module, match[1], module["classname_mappings"][match[1]], match[0]))
 
         return entries
     
@@ -134,9 +134,8 @@ def module_embed(module : dict) -> discord.Embed:
     embed = discord.Embed(colour=0xFF0000, title=f"Module {module_name}", description=f"- IDs: {', '.join(set(module['ids'].values()))}\n- Steam versions: {', '.join(set(module['ids'].keys()))}\n- Webpack keys: {', '.join(other_webpack_keys)}\n- Ignored keys: {', '.join(ignore_webpack_keys)}")
     return embed
 
-def entry_embed(module : dict, webpack_key : str, webpack_mappings: dict[str, str]) -> discord.Embed:
+def entry_embed(module : dict, webpack_key : str, webpack_mappings: dict[str, str], module_id : str) -> discord.Embed:
     unkown = "unknown"
-    module_id = list(module["ids"].values())[0]
     module_name = ("_" + str(module_id) if module['name'] is None else module['name'])
     embed = discord.Embed(colour=0x00FF00, title=f"Webpack key {webpack_key}", description=f"Cross-version css class: `.{module_name}_{webpack_key}`\n\n" + "\n".join([f'{steam_version} ({mappings_manager_instance.versions[steam_version] if steam_version in mappings_manager_instance.versions else unkown}) -> `{css_class}`' for _, (steam_version, css_class) in enumerate(webpack_mappings.items())]))
     return embed
@@ -186,7 +185,7 @@ async def webpack_key_autocomplete(interaction: discord.Interaction, current: st
 async def print_complete_command(interaction: discord.Interaction, css_class : str):
     css = mappings_manager_instance.find_css_class(css_class)
     module = module_embed(css[0])
-    entry = entry_embed(css[0], css[1], css[2])
+    entry = entry_embed(css[0], css[1], css[2], css[3])
     await interaction.response.send_message(embeds=[module, entry])
 
 @bot.css_group.command(name='webpack', description='Find related info to a webpack key')
@@ -197,7 +196,7 @@ async def print_complete_command(interaction: discord.Interaction, webpack_key :
     truncuated = False
     for x in webpack:
         module = module_embed(x[0])
-        entry = entry_embed(x[0], x[1], x[2])
+        entry = entry_embed(x[0], x[1], x[2], x[3])
         embeds.append(module)
         embeds.append(entry)
 
@@ -294,4 +293,35 @@ async def on_ready():
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
 
-bot.run(bot_token)
+#bot.run(bot_token)
+
+async def test():
+    asyncio.create_task(mappings_manager_instance.update_mappings())
+    await asyncio.sleep(2)
+
+    with open("Z:/shared.css", "r") as fp:
+        css = fp.read()
+
+    split_css = re.split(r"(\.[_a-zA-Z]+[_a-zA-Z0-9-]*)", css)
+
+    for x in range(len(split_css)):
+        if split_css[x].startswith(".") and split_css[x][1:] in mappings_manager_instance.index_css_class:
+            split_css[x] = "." + mappings_manager_instance.get_universal_key_for_css_class(split_css[x][1:])
+            print(f"Found: {split_css[x]}")
+        else:
+            print(f"Not found: {split_css[x][1:]} {split_css[x][1:] in mappings_manager_instance.index_css_class}")
+
+    css = ("".join(split_css)).replace("\\", "\\\\").replace("`", "\\`")
+
+    split_css = re.split(r"(\[class[*^|~]=\"[_a-zA-Z0-9-]*\"\])", css)
+
+    for x in range(len(split_css)):
+        if split_css[x].startswith("[class") and split_css[x].endswith("\"]") and split_css[x][9:-2] in mappings_manager_instance.index_css_class:
+            split_css[x] = split_css[x][0:9] + mappings_manager_instance.get_universal_key_for_css_class(split_css[x][9:-2]) + split_css[x][-2:]
+
+    css = ("".join(split_css)).replace("\\", "\\\\").replace("`", "\\`")
+
+    print(css)
+
+
+asyncio.run(test())
